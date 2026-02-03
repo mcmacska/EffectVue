@@ -1,6 +1,32 @@
+import joblib
 import pandas as pd
 import numpy as np
 from training.train import train
+from rdkit import Chem
+from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
+
+def is_valid_molecule(smiles, allowed_elements=None):
+    if allowed_elements is None:
+        allowed_elements = {'H', 'C', 'O', 'N', 'S', 'F', 'Cl', 'Br'}
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return False
+    for atom in mol.GetAtoms():
+        if atom.GetSymbol() not in allowed_elements:
+            return False
+    return True
+
+MODEL_PATH = "solubility_rf_model.joblib"
+
+def smiles_to_fingerprint(smiles: str, n_bits=2048, radius=2):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+    generator = GetMorganGenerator(radius=radius, fpSize=n_bits)
+    fp = generator.GetFingerprint(mol)
+    arr = np.zeros(n_bits, dtype=int)
+    Chem.DataStructs.ConvertToNumpyArray(fp, arr)
+    return arr
 
 def train_data(data):
     df = pd.DataFrame(data)
@@ -11,5 +37,41 @@ def train_data(data):
     print(f"Total molecules: {n_total}")
     print(f"Unique SMILES: {n_unique}")
 
+    # generate fingerprints
+    fingerprints = df['smiles'].apply(smiles_to_fingerprint)
+
+    # remove invalid molecules
+    fingerprints = fingerprints[fingerprints.notnull()]
+
+    # stack into a 2D array
+    X = np.vstack(fingerprints.values)
+
+    # target variable
+    y = df.loc[fingerprints.index, 'measured log solubility in mols per litre']
+
     # run the training
-    train(df)
+    model = train(X, y, MODEL_PATH)
+
+    # save the model
+    joblib.dump(model, filename=MODEL_PATH)
+
+
+
+def predict(smiles):
+    fp = smiles_to_fingerprint(smiles)
+    if fp is None:
+        raise ValueError("Invalid SMILES string")
+
+    if fp.sum() < 5:
+        print("⚠️ Molecule may be outside training domain")
+
+    fp = fp.reshape(1, -1)  # scikit-learn expects 2D
+
+    # load model
+    model = joblib.load(MODEL_PATH)
+
+    # predict
+    prediction = model.predict(fp)[0]
+
+    print(f"Prediction: {prediction}")
+    return prediction

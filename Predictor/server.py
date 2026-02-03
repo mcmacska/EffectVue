@@ -10,18 +10,18 @@ from core.scheduler import register_jobs, start_scheduler
 from training.manager import train_data
 
 
-# test
-data = get_data()
-train_data(data)
+# # test
+# data = get_data()
+# train_data(data)
 
 
 app = FastAPI()
 
-# register jobs
-register_jobs()
-
-# start the scheduler
-start_scheduler()
+# # register jobs
+# register_jobs()
+#
+# # start the scheduler
+# start_scheduler()
 
 # ---- "middleware" (like app.use) ----
 @app.middleware("http")
@@ -43,19 +43,24 @@ class CreateUserBody(BaseModel):
 async def health():
     return {"ok": True}
 
-@app.get("/predict")
-async def predict(interval: Optional[str] = None):
-    return predict_next()
+@app.get("/predict/")
+async def predict(smiles: str):
+    print(smiles)
+    if smiles is None or len(smiles) == 0:
+        raise HTTPException(status_code=400, detail="No smiles provided")
+    try:
+        result = predict_next(smiles)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    return result
 
 @app.get("/historic_data")
 async def get_historic_data():
     return {"id": "asd", "name": "asd"}
 
-# @app.get("/users/{user_id}")
-# async def get_user(user_id: str):
-#     if user_id != "u_123":
-#         raise HTTPException(status_code=404, detail="User not found")
-#     return {"id": "u_123", "name": "Ada", "email": "ada@example.com"}
+@app.get("/users/{user_id}")
+async def get_user(user_id: str):
+    return {"id": "u_123", "name": "Ada", "email": "ada@example.com"}
 
 
 # ---- global error handler example ----
