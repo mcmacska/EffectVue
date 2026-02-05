@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import time
 
-from controllers.service_api import predict_next
+from controllers.service_api import predict_log_s
 from data.manager import get_data
 from core.scheduler import register_jobs, start_scheduler
 from training.manager import train_data
@@ -43,16 +43,9 @@ class CreateUserBody(BaseModel):
 async def health():
     return {"ok": True}
 
-@app.get("/predict/")
-async def predict(smiles: str):
-    print(smiles)
-    if smiles is None or len(smiles) == 0:
-        raise HTTPException(status_code=400, detail="No smiles provided")
-    try:
-        result = predict_next(smiles)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-    return result
+@app.get("/predict_aqueous_solubility/")
+async def predict_aqueous_solubility(smiles: str):
+    return predict_log_s(smiles)
 
 @app.get("/historic_data")
 async def get_historic_data():

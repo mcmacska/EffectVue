@@ -5,6 +5,10 @@ from training.train import train
 from rdkit import Chem
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
 
+MODEL_PATH = "aqueous_solubility.joblib"
+SMILES_COLUMN_NAME = "SMILES"
+LOG_S_COLUMN_NAME = "logS"
+
 def is_valid_molecule(smiles, allowed_elements=None):
     if allowed_elements is None:
         allowed_elements = {'H', 'C', 'O', 'N', 'S', 'F', 'Cl', 'Br'}
@@ -16,7 +20,7 @@ def is_valid_molecule(smiles, allowed_elements=None):
             return False
     return True
 
-MODEL_PATH = "solubility_rf_model.joblib"
+
 
 def smiles_to_fingerprint(smiles: str, n_bits=2048, radius=2):
     mol = Chem.MolFromSmiles(smiles)
@@ -29,16 +33,17 @@ def smiles_to_fingerprint(smiles: str, n_bits=2048, radius=2):
     return arr
 
 def train_data(data):
+    # convert
     df = pd.DataFrame(data)
 
     n_total = len(data)
-    n_unique = data['smiles'].nunique()
+    n_unique = data[SMILES_COLUMN_NAME].nunique()
 
     print(f"Total molecules: {n_total}")
     print(f"Unique SMILES: {n_unique}")
 
-    # generate fingerprints
-    fingerprints = df['smiles'].apply(smiles_to_fingerprint)
+    # convert smiles string to morgan fingerprints
+    fingerprints = df[SMILES_COLUMN_NAME].apply(smiles_to_fingerprint)
 
     # remove invalid molecules
     fingerprints = fingerprints[fingerprints.notnull()]
@@ -47,10 +52,10 @@ def train_data(data):
     X = np.vstack(fingerprints.values)
 
     # target variable
-    y = df.loc[fingerprints.index, 'measured log solubility in mols per litre']
+    y = df.loc[fingerprints.index, LOG_S_COLUMN_NAME]
 
     # run the training
-    model = train(X, y, MODEL_PATH)
+    model = train(X, y)
 
     # save the model
     joblib.dump(model, filename=MODEL_PATH)
@@ -58,6 +63,7 @@ def train_data(data):
 
 
 def predict(smiles):
+    # convert smiles string to morgan fingerprints
     fp = smiles_to_fingerprint(smiles)
     if fp is None:
         raise ValueError("Invalid SMILES string")
