@@ -15,10 +15,8 @@ The Delaney (ESOL) dataset used in this project is licensed under the MIT Licens
 by the DeepChem contributors.
 
 
-@book{Ramsundar-et-al-2019,
-    title={Deep Learning for the Life Sciences},
-    author={Bharath Ramsundar and Peter Eastman and Patrick Walters and Vijay Pande and Karl Leswing and Zhenqin Wu},
-    publisher={O'Reilly Media},
-    note={\url{https://www.amazon.com/Deep-Learning-Life-Sciences-Microscopy/dp/1492039837}},
-    year={2019}
-}
+## References
+
+Ramsundar, B., Eastman, P., Walters, P., Pande, V., Leswing, K., & Wu, Z. (2019).
+*Deep Learning for the Life Sciences*.
+O’Reilly Media.
