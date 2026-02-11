@@ -4,7 +4,6 @@ from data.read_data import read_data
 import pandas as pd
 
 dataset_path = "delaney-processed.csv"
-# dataset_path = "curated-solubility-dataset.csv"
 
 def get_data() -> list[dict]:
     # read the data
